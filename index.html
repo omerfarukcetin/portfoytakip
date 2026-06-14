@@ -1,3 +1,488 @@
-<html>
-  <h1>portföy yeni</h1>
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta
+      name="description"
+      content="Kişisel yatırım ve portföy takibi için modern, çevrimdışı çalışabilen PWA."
+    />
+    <title>PortföyTakip</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Local-first personal wealth OS</p>
+          <h1>PortföyTakip</h1>
+          <p class="subtitle">
+            Tüm yatırımlarını tek ekranda gör, çevrimdışı da güvenle yönet.
+          </p>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="status-group">
+            <span class="status-pill" id="network-status">Cevrimici</span>
+            <span class="status-pill muted" id="sync-status">Yerel senkron aktif</span>
+          </div>
+          <div class="button-row">
+            <button class="ghost-button" id="install-button" hidden>Uygulamayi Yukle</button>
+            <button class="ghost-button" id="theme-button">Tema</button>
+            <button class="ghost-button" id="backup-button">Yedek</button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="section-nav" aria-label="Ana gezinti">
+        <button class="nav-chip is-active" data-section="dashboard">Genel Bakis</button>
+        <button class="nav-chip" data-section="portfolios">Portfoyler</button>
+        <button class="nav-chip" data-section="assets">Varliklar</button>
+        <button class="nav-chip" data-section="transactions">Islemler</button>
+        <button class="nav-chip" data-section="reports">Raporlar</button>
+        <button class="nav-chip" data-section="settings">Ayarlar</button>
+      </nav>
+
+      <main class="content-grid">
+        <section class="view is-active" id="view-dashboard">
+          <div class="hero-card">
+            <div>
+              <p class="eyebrow">Konsolide gorunum</p>
+              <h2 id="hero-total-value">-</h2>
+              <p class="hero-copy" id="hero-summary">
+                Portfoylerinin toplam degeri ve gunluk operasyon durumu burada gorunur.
+              </p>
+            </div>
+            <div class="hero-actions">
+              <button class="primary-button" data-open-dialog="transaction">Islem Ekle</button>
+              <button class="secondary-button" data-open-dialog="asset">Varlik Ekle</button>
+              <button class="secondary-button" id="refresh-prices-button">Fiyatlari Yenile</button>
+            </div>
+          </div>
+
+          <div class="metric-grid" id="metric-grid"></div>
+
+          <div class="panel-grid two-up">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Dagilim</p>
+                  <h3>Varlik sinifi dagilimi</h3>
+                </div>
+              </div>
+              <div class="allocation-layout">
+                <div class="donut-wrap">
+                  <div class="donut-chart" id="allocation-donut" aria-label="Dagilim grafigi"></div>
+                </div>
+                <div class="legend-list" id="allocation-legend"></div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Nakit ve getiri</p>
+                  <h3>Performans ozetleri</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="performance-highlights"></div>
+            </article>
+          </div>
+
+          <div class="panel-grid">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Son hareketler</p>
+                  <h3>Gecmis islemler</h3>
+                </div>
+              </div>
+              <div class="table-wrap" id="recent-transactions"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-portfolios">
+          <div class="panel-grid two-up">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Portfoy yonetimi</p>
+                  <h3>Portfoyler</h3>
+                </div>
+                <button class="primary-button" data-open-dialog="portfolio">Yeni Portfoy</button>
+              </div>
+              <div class="stack-list" id="portfolio-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Secili portfoy</p>
+                  <h3>Detaylar</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="portfolio-detail"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-assets">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Pozisyonlar</p>
+                <h3>Varliklar</h3>
+              </div>
+              <button class="primary-button" data-open-dialog="asset">Yeni Varlik</button>
+            </div>
+            <div class="toolbar">
+              <label class="field">
+                <span>Portfoy filtresi</span>
+                <select id="asset-portfolio-filter"></select>
+              </label>
+              <label class="field">
+                <span>Ara</span>
+                <input type="search" id="asset-search" placeholder="Ornek: THYAO, BTC, Altin" />
+              </label>
+            </div>
+            <div class="table-wrap" id="asset-table"></div>
+          </article>
+        </section>
+
+        <section class="view" id="view-transactions">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Islem gunlugu</p>
+                <h3>Islemler</h3>
+              </div>
+              <button class="primary-button" data-open-dialog="transaction">Yeni Islem</button>
+            </div>
+            <div class="toolbar">
+              <label class="field">
+                <span>Tur</span>
+                <select id="transaction-kind-filter"></select>
+              </label>
+              <label class="field">
+                <span>Portfoy</span>
+                <select id="transaction-portfolio-filter"></select>
+              </label>
+            </div>
+            <div class="table-wrap" id="transaction-table"></div>
+          </article>
+        </section>
+
+        <section class="view" id="view-reports">
+          <div class="panel-grid two-up">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">En iyi ve zayif taraflar</p>
+                  <h3>Varlik performansi</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="asset-performance-report"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Kur riski</p>
+                  <h3>Para birimi dagilimi</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="currency-report"></div>
+            </article>
+          </div>
+
+          <div class="panel-grid two-up">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Portfoy sagligi</p>
+                  <h3>Ozet gostergeler</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="health-report"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Veri kalitesi</p>
+                  <h3>Eksik fiyat ve oranlar</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="quality-report"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-settings">
+          <div class="panel-grid two-up">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Uygulama ayarlari</p>
+                  <h3>Genel tercihleri yonet</h3>
+                </div>
+              </div>
+              <form class="form-grid" id="settings-form">
+                <label class="field">
+                  <span>Baz para birimi</span>
+                  <select name="baseCurrency">
+                    <option value="TRY">TRY</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Ondalik hassasiyet</span>
+                  <select name="decimalPlaces">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </label>
+                <label class="field field-checkbox">
+                  <input type="checkbox" name="compactNumbers" />
+                  <span>Buyuk rakamlari kisaltarak goster</span>
+                </label>
+                <label class="field field-checkbox">
+                  <input type="checkbox" name="autoPriceRefresh" />
+                  <span>Cevrimiciyken acilista fiyat yenile</span>
+                </label>
+                <button class="primary-button" type="submit">Ayarlarini Kaydet</button>
+              </form>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Yedek ve geri donus</p>
+                  <h3>Veri guvenligi</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="backup-status"></div>
+              <div class="button-row wrap">
+                <button class="secondary-button" id="export-button">JSON Disari Aktar</button>
+                <label class="secondary-button file-label">
+                  JSON Ice Aktar
+                  <input type="file" id="import-input" accept="application/json" hidden />
+                </label>
+                <button class="secondary-button" id="snapshot-button">Yerel Kurtarma Noktasi</button>
+                <button class="danger-button" id="reset-button">Tum Verileri Sifirla</button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="modal" id="portfolio-dialog">
+      <form class="modal-card" method="dialog" id="portfolio-form">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Portfoy duzenleme</p>
+            <h3 id="portfolio-dialog-title">Yeni Portfoy</h3>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Kapat">×</button>
+        </div>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label class="field">
+            <span>Portfoy adi</span>
+            <input name="name" required maxlength="60" placeholder="Ornek: Uzun Vade" />
+          </label>
+          <label class="field">
+            <span>Yatirim amaci</span>
+            <input name="strategy" maxlength="80" placeholder="Temettu, buyume, koruma..." />
+          </label>
+          <label class="field field-full">
+            <span>Notlar</span>
+            <textarea name="notes" rows="4" placeholder="Risk seviyesi, hedef dagilim, kurallar..."></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" value="cancel" type="submit">Iptal</button>
+          <button class="primary-button" type="button" id="save-portfolio-button">Kaydet</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="asset-dialog">
+      <form class="modal-card" method="dialog" id="asset-form">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Varlik duzenleme</p>
+            <h3 id="asset-dialog-title">Yeni Varlik</h3>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Kapat">×</button>
+        </div>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label class="field">
+            <span>Portfoy</span>
+            <select name="portfolioId" required></select>
+          </label>
+          <label class="field">
+            <span>Varlik turu</span>
+            <select name="type" required></select>
+          </label>
+          <label class="field">
+            <span>Ad</span>
+            <input name="name" required maxlength="80" placeholder="Ornek: Turk Hava Yollari" />
+          </label>
+          <label class="field">
+            <span>Sembol / Kod</span>
+            <input name="symbol" maxlength="32" placeholder="THYAO, MAC, BTC, XAU" />
+          </label>
+          <label class="field">
+            <span>Fiyat para birimi</span>
+            <select name="priceCurrency">
+              <option value="TRY">TRY</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="XAU">XAU</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Guncel fiyat</span>
+            <input name="currentPrice" type="number" min="0" step="0.0001" value="0" />
+          </label>
+          <label class="field">
+            <span>Baz para birimine ceviri orani</span>
+            <input name="currentFxRate" type="number" min="0" step="0.0001" value="1" />
+          </label>
+          <label class="field">
+            <span>Miktar hassasiyeti</span>
+            <input name="quantityPrecision" type="number" min="0" max="8" step="1" value="4" />
+          </label>
+          <label class="field">
+            <span>Fiyat kaynagi</span>
+            <select name="feedType">
+              <option value="manual">Elle giris</option>
+              <option value="binance">Binance spot</option>
+              <option value="json">JSON endpoint</option>
+            </select>
+          </label>
+          <label class="field field-full">
+            <span>Feed URL</span>
+            <input name="feedUrl" placeholder="Ornek: https://example.com/prices/tefas.json" />
+          </label>
+          <label class="field">
+            <span>JSON fiyat alani</span>
+            <input name="feedPricePath" placeholder="price, data.last, fon.price" />
+          </label>
+          <label class="field">
+            <span>JSON kur alani</span>
+            <input name="feedFxPath" placeholder="fx, rates.try" />
+          </label>
+          <label class="field field-full">
+            <span>Notlar</span>
+            <textarea name="notes" rows="3" placeholder="TEFAS kodu, BES sirketi, alt hesap bilgisi..."></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" value="cancel" type="submit">Iptal</button>
+          <button class="primary-button" type="button" id="save-asset-button">Kaydet</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="transaction-dialog">
+      <form class="modal-card" method="dialog" id="transaction-form">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Islem kaydi</p>
+            <h3 id="transaction-dialog-title">Yeni Islem</h3>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Kapat">×</button>
+        </div>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label class="field">
+            <span>Portfoy</span>
+            <select name="portfolioId" required></select>
+          </label>
+          <label class="field">
+            <span>Tur</span>
+            <select name="kind" required></select>
+          </label>
+          <label class="field field-full" id="asset-select-field">
+            <span>Ilgili varlik</span>
+            <select name="assetId"></select>
+          </label>
+          <label class="field">
+            <span>Tarih</span>
+            <input name="date" type="date" required />
+          </label>
+          <label class="field">
+            <span>Miktar</span>
+            <input name="quantity" type="number" min="0" step="0.0001" value="0" />
+          </label>
+          <label class="field">
+            <span>Birim fiyat</span>
+            <input name="unitPrice" type="number" min="0" step="0.0001" value="0" />
+          </label>
+          <label class="field">
+            <span>Tutar</span>
+            <input name="amount" type="number" min="0" step="0.0001" value="0" />
+          </label>
+          <label class="field">
+            <span>Masraf / komisyon</span>
+            <input name="fee" type="number" min="0" step="0.0001" value="0" />
+          </label>
+          <label class="field">
+            <span>Stopaj</span>
+            <input name="withholding" type="number" min="0" step="0.0001" value="0" />
+          </label>
+          <label class="field">
+            <span>Kur cevrim orani</span>
+            <input name="fxRate" type="number" min="0" step="0.0001" value="1" />
+          </label>
+          <label class="field">
+            <span>Nakit para birimi</span>
+            <select name="currency">
+              <option value="TRY">TRY</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </label>
+          <label class="field field-full">
+            <span>Aciklama</span>
+            <textarea name="note" rows="3" placeholder="Ornek: Maas birikimi, kupon odemesi, duzenli alim"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" value="cancel" type="submit">Iptal</button>
+          <button class="primary-button" type="button" id="save-transaction-button">Kaydet</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="backup-dialog">
+      <form class="modal-card" method="dialog">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Yerel kurtarma</p>
+            <h3>Otomatik yedekler</h3>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Kapat">×</button>
+        </div>
+        <div class="stack-list" id="snapshot-list"></div>
+        <div class="modal-actions">
+          <button class="secondary-button" value="cancel" type="submit">Kapat</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <script type="module" src="app.js"></script>
+  </body>
 </html>
